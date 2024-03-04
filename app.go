@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -17,37 +16,46 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-// App struct
 type App struct {
 	ctx context.Context
 }
 
 type Hop struct {
-	Number   int      `json:"number"`
-	Address  string   `json:"address"`
-	IPEEInfo IPEEInfo `json:"ipeeInfo"`
+	Number    int      `json:"number"`
+	Address   string   `json:"address"`
+	IPEEInfo  IPEEInfo `json:"ipeeInfo"`
+	RTT       int64    `json:"rtt"`
+	IsPrivate bool     `json:"isPrivate"`
 }
 
-// NewApp creates a new App application struct
+type IPEEInfo struct {
+	OK               bool   `json:"ok"`
+	Type             string `json:"type"`
+	CIDR             string `json:"cidr"`
+	ASNumber         int    `json:"asNumber"`
+	BinarySubnetMask string `json:"binarySubnetMask"`
+	SubnetMask       string `json:"subnetMask"`
+	Class            string `json:"class"`
+	NetworkAddress   string `json:"networkAddress"`
+	NumberOfHosts    int    `json:"numberOfHosts"`
+	ASName           string `json:"asName"`
+	OrganizationName string `json:"organizationName"`
+	Country          string `json:"country"`
+	CountryCode      string `json:"countryCode"`
+	QueryDuration    int    `json:"t"`
+	Query            string `json:"query"`
+}
+
 func NewApp() *App {
 	return &App{}
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-func (a *App) Trace(ip string) string {
-	// slice to store each hop
-	var hops []*Hop
-
+// trace route
+func (a *App) Trace(ip string, maxHops int, timeout int) string {
 	// icmp message
 	icmpMessage := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
@@ -74,12 +82,21 @@ func (a *App) Trace(ip string) string {
 	// create wait group
 	var wg sync.WaitGroup
 
+	// rtt timer
+	var start int64
+
+	// buffer
+	b := make([]byte, 8192)
+
 	// range over 1 to max ttl
-	for i := 1; i < 32; i++ {
+	for i := 1; i <= maxHops; i++ {
 		// set ttl
 		if err := listener.IPv4PacketConn().SetTTL(i); err != nil {
 			return err.Error()
 		}
+
+		// set start time
+		start = time.Now().UnixMilli()
 
 		// send packet
 		if _, err := listener.WriteTo(icmpMessageBytes, &net.IPAddr{IP: net.ParseIP(ip)}); err != nil {
@@ -87,27 +104,28 @@ func (a *App) Trace(ip string) string {
 		}
 
 		// set read deadline
-		if err = listener.IPv4PacketConn().SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		if err = listener.IPv4PacketConn().SetReadDeadline(time.Now().Add(time.Millisecond * time.Duration(timeout))); err != nil {
 			return err.Error()
 		}
 
 		// wait for response
-		b := make([]byte, 1024)
 		_, src, err := listener.ReadFrom(b)
 		if err != nil {
-			hops = append(hops, &Hop{Number: i, Address: "timeout"})
 			runtime.EventsEmit(a.ctx, "hop", Hop{Number: i, Address: "timeout"})
 			continue
 		}
 
-		hop := &Hop{Number: i, Address: src.String()}
+		hop := &Hop{Number: i, Address: src.String(), RTT: time.Now().UnixMilli() - start, IsPrivate: net.ParseIP(src.String()).IsPrivate()}
 
-		// save response
-		hops = append(hops, hop)
-		runtime.EventsEmit(a.ctx, "hop", Hop{Number: i, Address: src.String()})
+		// send hop details to frontend
+		runtime.EventsEmit(a.ctx, "hop", hop)
 
-		if !net.ParseIP(src.String()).IsPrivate() {
+		// get IPEEInfo if ip is not private
+		if !hop.IsPrivate {
+			// increment wait group
 			wg.Add(1)
+
+			// send request to api on new thread
 			go func(h *Hop) {
 				res, err := http.Get("https://api.ipee.info/v1/info/" + h.Address)
 				if err != nil {
@@ -118,13 +136,18 @@ func (a *App) Trace(ip string) string {
 					log.Println(err)
 				}
 				res.Body.Close()
+
 				var info IPEEInfo
 				err = json.Unmarshal(bytes, &info)
 				if err != nil {
 					log.Println(err)
 				}
+
+				// send info to frontend
 				h.IPEEInfo = info
 				runtime.EventsEmit(a.ctx, "hop info", h)
+
+				// decrement wait group
 				wg.Done()
 			}(hop)
 		}
@@ -137,9 +160,17 @@ func (a *App) Trace(ip string) string {
 
 	// wait for go routines to finish
 	wg.Wait()
-	for _, hop := range hops {
-		fmt.Println(hop.Number, hop.Address, hop.IPEEInfo.Country, hop.IPEEInfo.ASName)
-	}
 
 	return ""
+}
+
+// get app version from embeded wails.json file
+func (a *App) GetVersion() string {
+	var config WailsConfig
+	err := json.Unmarshal(wailsConfigBytes, &config)
+	if err != nil {
+		log.Println(err)
+		return "unknown"
+	}
+	return config.Info.ProductVersion
 }
