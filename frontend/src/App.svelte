@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Trace } from "../wailsjs/go/main/App.js";
+  import { onMount } from "svelte";
+  import { GetVersion, Trace } from "../wailsjs/go/main/App.js";
   import { EventsOn } from "../wailsjs/runtime/runtime";
   import "./style.css";
   import { fly } from "svelte/transition";
@@ -8,42 +9,46 @@
     number: number;
     address: string;
     ipeeInfo: IPEEInfo;
+    rtt: number;
+    isPrivate: boolean;
   }
 
   interface IPEEInfo {
     asName: string;
     country: string;
+    countryCode: string;
+    organizationName: string;
   }
 
   let ip: string = "";
+  let maxHops: number = 32;
+  let timeout: number = 1000;
   let error: string = "";
   let loading: boolean = false;
   let hopsEelement: HTMLDivElement;
   let hops: { [number: number]: Hop } = {};
-  let routes = [];
+  let route = [];
+  let version = "";
 
   async function trace() {
     try {
-      error = ""
+      error = "";
       hops = {};
-      routes = [];
+      route = [];
       loading = true;
-      error = await Trace(ip);
+      error = await Trace(ip, maxHops, timeout);
       if (!error) {
-        const values = Object.values(hops).sort((a, b) => a.number - b.number);
-        let country = values[0].ipeeInfo.country;
-        let count = 1;
-        const temp = [];
-        temp.push({ country, count });
-        for (let i = 1; i < values.length; i++) {
-          count++;
-          if (values[i].ipeeInfo.country !== country) {
-            country = values[i].ipeeInfo.country;
-            temp.push({ country, count });
-            count = 1;
-          }
-        }
-        routes = temp;
+        // const tempHops = Object.values(hops).sort(
+        //   (a, b) => a.number - b.number
+        // );
+        // let lastCountry = "";
+        // for (const hop of tempHops) {
+        //   if (!hop.ipeeInfo.country) continue;
+        //   if (hop.ipeeInfo.country !== lastCountry) {
+        //     route.push(hop.ipeeInfo.country);
+        //     lastCountry = hop.ipeeInfo.country;
+        //   }
+        // }
       }
     } catch (error) {
       console.log(error);
@@ -58,19 +63,37 @@
   });
   EventsOn("hop info", (hop: Hop) => {
     hops[hop.number] = hop;
+    if (
+      hop.ipeeInfo.country !== "" &&
+      hop.ipeeInfo.country !== route[route.length - 1]
+    ) {
+      route = [...route, hop.ipeeInfo.country];
+    }
+  });
+
+  onMount(async () => {
+    try {
+      version = await GetVersion();
+    } catch (error) {
+      console.log(error);
+    }
   });
 </script>
 
+<div class="absolute left-1 bottom-1 text-neutral-600 z-10 font-bold text-sm">
+  v{version}
+</div>
+
 <main
-  class="font-bold bg-neutral-950 overflow-hidden p-8 text-neutral-50 w-full h-[100vh] flex flex-col"
+  class="bg-neutral-950 overflow-hidden p-8 text-neutral-50 w-full h-[100vh] flex flex-col"
 >
-  <div class="mb-4 flex flex-col items-center">
-    <span class="text-[#ffff00] text-4xl">IPEE</span>
-    <span class="tracking-wide">TRACER</span>
+  <div class="mb-4 flex justify-center items-end">
+    <span class="text-[#ffff00] text-4xl font-bold mr-2">ipee</span>
+    <span class="tracking-wide text-4xl font-bold">tracer</span>
   </div>
-  <div class="flex items-center">
+  <form class="flex items-center text-lg font-bold">
     <input
-      class="text-neutral-950 px-2 py-1 rounded focus:outline-none w-full"
+      class="text-neutral-950 px-3 py-1.5 rounded focus:outline-none w-full outline-none"
       autocomplete="off"
       bind:value={ip}
       id="name"
@@ -81,52 +104,102 @@
     <button
       on:click={trace}
       disabled={loading}
-      class="bg-blue-700 rounded px-2 py-1 ml-1 {loading && 'opacity-50'}"
-      >TRACE</button
+      class="bg-blue-700 ml-2 hover:bg-blue-800 rounded px-3 py-1.5 {loading &&
+        'opacity-50'}">TRACE</button
     >
+  </form>
+  <div class="flex mt-4 justify-between">
+    <div class="flex items-center">
+      <div class="mr-2">Hops:</div>
+      <input
+        class="text-neutral-950 w-full px-3 py-1.5 rounded focus:outline-none outline-none"
+        autocomplete="off"
+        bind:value={maxHops}
+        id="name"
+        type="number"
+        disabled={loading}
+      />
+    </div>
+    <div class="flex items-center">
+      <div class="mr-2">Timeout:</div>
+      <input
+        class="text-neutral-950 w-full px-3 py-1.5 rounded focus:outline-none outline-none"
+        autocomplete="off"
+        bind:value={timeout}
+        id="name"
+        type="number"
+        disabled={loading}
+      />
+    </div>
   </div>
   {#if error}
     <div class="my-2 text-red-700">{error}</div>
   {/if}
   <div
     bind:this={hopsEelement}
-    class="w-full overflow-y-scroll my-4 p-4 bg-neutral-900 rounded shadow-inner h-full scroll-smooth"
+    class="w-full overflow-y-scroll my-4 p-4 bg-neutral-900 rounded shadow-inner h-full scroll-smooth min-w-[640px]"
   >
-    <div class="w-full grid grid-cols-10 grid-flow-col gap-1">
+    <div
+      class="w-full grid grid-cols-12 grid-flow-col gap-1 border-b-2 pb-2 mb-2 border-neutral-800 tracking-wider"
+    >
       <span class="col-span-1">#</span>
-      <span class="col-span-3">ADDRESS</span>
-      <span class="col-span-3">COUNTRY</span>
-      <span class="col-span-3">AS NAME</span>
+      <span class="col-span-3">address</span>
+      <span class="col-span-2">rtt</span>
+      <span class="col-span-2">country</span>
+      <span class="col-span-4">isp</span>
     </div>
     {#each Object.values(hops) as hop}
       <div
-        class="w-full grid grid-cols-10 grid-flow-col gap-1 font-normal"
-        transition:fly={{
-          duration: 100,
-          y: 10,
-        }}
+        class="w-full grid grid-cols-12 grid-flow-col gap-1 my-1 hover:bg-neutral-800 px-1 {hop.address ===
+          ip && 'text-green-500 font-bold'}"
+        transition:fly={{ duration: 100, y: 10 }}
       >
         <span class="col-span-1">
           {hop.number}
         </span>
-        <span class="col-span-3">
-          {hop.address}
+        <span class="col-span-3 flex">
+          {hop.address === "timeout" ? "*" : hop.address}
         </span>
-        <span class="col-span-3">
-          {hop.ipeeInfo.country}
+        <span class="col-span-2">
+          {hop.address === "timeout" ? "*" : `${hop.rtt}ms`}
         </span>
-        <span class="col-span-3">
-          {hop.ipeeInfo.asName}
+        <span class="col-span-2 truncate flex items-center">
+          {#if hop.address === "timeout" || hop.isPrivate}
+            *
+          {:else if hop.ipeeInfo.countryCode}
+            {hop.ipeeInfo.countryCode}
+          {:else}
+            <span class="relative flex h-2 w-2 ml-1">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-600 opacity-75"
+              ></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-700"
+              ></span>
+            </span>
+          {/if}
+        </span>
+        <span class="col-span-4 truncate flex items-center">
+          {#if hop.address === "timeout" || hop.isPrivate}
+            *
+          {:else if hop.ipeeInfo.organizationName}
+            {hop.ipeeInfo.organizationName}
+          {:else}
+            <span class="relative flex h-2 w-2 ml-1">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-600 opacity-75"
+              ></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-700"
+              ></span>
+            </span>
+          {/if}
         </span>
       </div>
     {/each}
   </div>
-  {#if routes.length}
-    <div class="p-4 bg-neutral-900 rounded shadow-inner">
-      {#each routes as route}
-        {#if route.country}
-          <span>→{route.country}</span>
-        {/if}
+  {#if route.length}
+    <div class="p-4 bg-neutral-900 rounded">
+      {#each route as country}
+        <span class="mr-2">→</span><span class="mr-2 text-lg">{country}</span>
       {/each}
     </div>
   {/if}
