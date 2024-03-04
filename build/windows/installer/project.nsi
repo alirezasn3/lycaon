@@ -32,6 +32,7 @@ Unicode true
 ####
 ## Include the wails tools
 ####
+#!define ARG_WAILS_AMD64_BINARY "..\..\bin\ipee-tracer.exe"
 !include "wails_tools.nsh"
 
 # The version information for this two must consist of 4 parts
@@ -95,6 +96,8 @@ Section
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+ 
+    Exec 'netsh advfirewall firewall add rule name=IPEETRACER protocol=icmpv4:11,any dir=in action=allow'
 SectionEnd
 
 Section "uninstall"
@@ -111,4 +114,6 @@ Section "uninstall"
     !insertmacro wails.unassociateCustomProtocols
 
     !insertmacro wails.deleteUninstaller
+
+    Exec 'netsh advfirewall firewall delete rule name=IPEETRACER'
 SectionEnd
