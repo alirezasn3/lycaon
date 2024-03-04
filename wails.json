@@ -9,5 +9,9 @@
   "author": {
     "name": "Alireza Saadatnia",
     "email": "alirezasn3@gmail.com"
+  },
+  "info": {
+    "productVersion": "1.0.0",
+    "comments": "Trace Network Route to Destination"
   }
 }
