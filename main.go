@@ -11,15 +11,28 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed wails.json
+var wailsConfigBytes []byte
+
+type WailsConfig struct {
+	Info WailsConfigInfo `json:"info"`
+}
+
+type WailsConfigInfo struct {
+	ProductVersion string `json:"productVersion"`
+}
+
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "IPEE TRACER",
-		Width:  720,
-		Height: 720,
+		Title:     "IPEE TRACER",
+		Width:     720,
+		Height:    720,
+		MinWidth:  720,
+		MinHeight: 720,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
