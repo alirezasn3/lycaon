@@ -1,0 +1,1 @@
+netsh advfirewall firewall add rule name=IPEETRACER protocol=icmpv4:11,any dir=in action=allow
