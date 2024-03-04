@@ -1,7 +1,7 @@
 # IPEE Tracer
 
 ## Overview
-IPEE Tracer is a sophisticated tool designed to trace the route packets take across the internet to reach a specific IP address. Unlike traditional traceroute applications, IPEE Tracer enriches the traceroute data with detailed information about each hop, including the country and ISP (Internet Service Provider), by leveraging the https://ipee.info API. This feature provides users with a deeper understanding of the path their data takes, including geographical and organizational insights.
+IPEE Tracer is a sophisticated tool designed to trace the route packets take across the internet to reach a specific IP address. Unlike traditional traceroute applications, IPEE Tracer enriches the traceroute data with detailed information about each hop, including the country and ISP (Internet Service Provider), by leveraging the [IPEE](https://ipee.info) API. This feature provides users with a deeper understanding of the path their data takes, including geographical and organizational insights.
 
 ## Features
 - **Traceroute Analysis**: Discover the path packets take to reach a destination IP, with detailed hop-by-hop analysis.
@@ -10,7 +10,7 @@ IPEE Tracer is a sophisticated tool designed to trace the route packets take acr
 - **Cross-Platform Support**: Thanks to the Wails framework, IPEE Tracer can be run on various operating systems (windows installer and binary available in [releases](https://github.com/alirezasn3/ipee-tracer/releases)).
 
 ## How It Works
-IPEE Tracer utilizes the ICMP protocol to send echo requests to the target IP address. For each hop along the path, the application captures the IP address and queries the https://ipee.info API to fetch detailed information about the hop's geographical location and the ISP managing it. This process is seamlessly integrated into the application's backend, written in Go, and the results are dynamically displayed on the frontend, developed with Svelte-TS.
+IPEE Tracer utilizes the ICMP protocol to send echo requests to the target IP address. For each hop along the path, the application captures the IP address and queries the [IPEE](https://ipee.info) API to fetch detailed information about the hop's geographical location and the ISP managing it. This process is seamlessly integrated into the application's backend, written in Go, and the results are dynamically displayed on the frontend, developed with Svelte-TS.
 
 ### Leveraging [IPEE](https://ipee.info) API
 The core functionality that sets IPEE Tracer apart is its integration with the [IPEE](https://ipee.info) API. This API provides detailed information about IP addresses, including the associated country and ISP. When a hop's IP address is identified, a request is made to the API, and the response is used to enrich the traceroute data displayed to the user. This integration allows IPEE Tracer to provide a more informative and comprehensive traceroute analysis than traditional tools.
