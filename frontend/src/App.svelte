@@ -37,19 +37,6 @@
       route = [];
       loading = true;
       error = await Trace(ip, maxHops, timeout);
-      if (!error) {
-        // const tempHops = Object.values(hops).sort(
-        //   (a, b) => a.number - b.number
-        // );
-        // let lastCountry = "";
-        // for (const hop of tempHops) {
-        //   if (!hop.ipeeInfo.country) continue;
-        //   if (hop.ipeeInfo.country !== lastCountry) {
-        //     route.push(hop.ipeeInfo.country);
-        //     lastCountry = hop.ipeeInfo.country;
-        //   }
-        // }
-      }
     } catch (error) {
       console.log(error);
       error = error.message;
@@ -87,10 +74,6 @@
 <main
   class="bg-neutral-950 overflow-hidden p-8 text-neutral-50 w-full h-[100vh] flex flex-col"
 >
-  <div class="mb-4 flex justify-center items-end">
-    <span class="text-[#ffff00] text-4xl font-bold mr-2">ipee</span>
-    <span class="tracking-wide text-4xl font-bold">tracer</span>
-  </div>
   <form class="flex items-center text-lg font-bold">
     <input
       class="text-neutral-950 px-3 py-1.5 rounded focus:outline-none w-full outline-none"

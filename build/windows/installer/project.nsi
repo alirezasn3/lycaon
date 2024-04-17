@@ -22,7 +22,7 @@ Unicode true
 ## !define INFO_PROJECTNAME    "MyProject" # Default "{{.Name}}"
 ## !define INFO_COMPANYNAME    "MyCompany" # Default "{{.Info.CompanyName}}"
 ## !define INFO_PRODUCTNAME    "MyProduct" # Default "{{.Info.ProductName}}"
-## !define INFO_PRODUCTVERSION "1.0.0"     # Default "{{.Info.ProductVersion}}"
+## !define INFO_PRODUCTVERSION "1.0.1"     # Default "{{.Info.ProductVersion}}"
 ## !define INFO_COPYRIGHT      "Copyright" # Default "{{.Info.Copyright}}"
 ###
 ## !define PRODUCT_EXECUTABLE  "Application.exe"      # Default "${INFO_PROJECTNAME}.exe"
@@ -32,7 +32,7 @@ Unicode true
 ####
 ## Include the wails tools
 ####
-#!define ARG_WAILS_AMD64_BINARY "..\..\bin\ipee-tracer.exe"
+#!define ARG_WAILS_AMD64_BINARY "..\..\bin\Lycaon.exe"
 !include "wails_tools.nsh"
 
 # The version information for this two must consist of 4 parts
@@ -97,7 +97,7 @@ Section
 
     !insertmacro wails.writeUninstaller
  
-    Exec 'netsh advfirewall firewall add rule name=IPEETRACER protocol=icmpv4:11,any dir=in action=allow'
+    Exec 'netsh advfirewall firewall add rule name=Lycaon protocol=icmpv4:11,any dir=in action=allow'
 SectionEnd
 
 Section "uninstall"
@@ -115,5 +115,5 @@ Section "uninstall"
 
     !insertmacro wails.deleteUninstaller
 
-    Exec 'netsh advfirewall firewall delete rule name=IPEETRACER'
+    Exec 'netsh advfirewall firewall delete rule name=Lycaon'
 SectionEnd

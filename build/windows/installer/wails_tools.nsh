@@ -5,16 +5,16 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "ipee-tracer"
+    !define INFO_PROJECTNAME "Lycaon"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "ipee-tracer"
+    !define INFO_COMPANYNAME "Lycaon"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "ipee-tracer"
+    !define INFO_PRODUCTNAME "Lycaon"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.0.0"
+    !define INFO_PRODUCTVERSION "1.0.1"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "Copyright........."

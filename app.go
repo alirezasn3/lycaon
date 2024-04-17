@@ -127,13 +127,15 @@ func (a *App) Trace(ip string, maxHops int, timeout int) string {
 
 			// send request to api on new thread
 			go func(h *Hop) {
-				res, err := http.Get("https://api.ipee.info/v1/info/" + h.Address)
+				res, err := http.Get("https://ipee-api.alirezasn.workers.dev/v1/info/" + h.Address)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				bytes, err := io.ReadAll(res.Body)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				res.Body.Close()
 
@@ -141,6 +143,7 @@ func (a *App) Trace(ip string, maxHops int, timeout int) string {
 				err = json.Unmarshal(bytes, &info)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 
 				// send info to frontend

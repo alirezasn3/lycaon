@@ -1,1 +1,1 @@
-netsh advfirewall firewall delete rule name=IPEETRACER
+netsh advfirewall firewall delete rule name=Lycaon

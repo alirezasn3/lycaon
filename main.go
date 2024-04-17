@@ -28,7 +28,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:     "IPEE TRACER",
+		Title:     "Lycaon",
 		Width:     720,
 		Height:    720,
 		MinWidth:  720,
