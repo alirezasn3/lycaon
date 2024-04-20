@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -44,6 +43,12 @@ type IPEEInfo struct {
 	CountryCode      string `json:"countryCode"`
 	QueryDuration    int    `json:"t"`
 	Query            string `json:"query"`
+}
+
+type IPEEMyIP struct {
+	OK        bool   `json:"ok"`
+	IPAddress string `json:"ipAddress"`
+	IPVersion int    `json:"ipVersion"`
 }
 
 func NewApp() *App {
@@ -127,20 +132,17 @@ func (a *App) Trace(ip string, maxHops int, timeout int) string {
 
 			// send request to api on new thread
 			go func(h *Hop) {
+				// decrement wait group
+				defer wg.Done()
+
 				res, err := http.Get("https://ipee-api.alirezasn.workers.dev/v1/info/" + h.Address)
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				bytes, err := io.ReadAll(res.Body)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				res.Body.Close()
 
 				var info IPEEInfo
-				err = json.Unmarshal(bytes, &info)
+				err = json.NewDecoder(res.Body).Decode(&info)
 				if err != nil {
 					log.Println(err)
 					return
@@ -149,9 +151,6 @@ func (a *App) Trace(ip string, maxHops int, timeout int) string {
 				// send info to frontend
 				h.IPEEInfo = info
 				runtime.EventsEmit(a.ctx, "hop info", h)
-
-				// decrement wait group
-				wg.Done()
 			}(hop)
 		}
 
@@ -165,6 +164,24 @@ func (a *App) Trace(ip string, maxHops int, timeout int) string {
 	wg.Wait()
 
 	return ""
+}
+
+// get client's public IP
+func (a *App) GetPublicIP() string {
+	res, err := http.Get("https://ipee-api.alirezasn.workers.dev/v1/my-ip")
+	if err != nil {
+		log.Println(err)
+		return "error" + err.Error()
+	}
+
+	var myIP IPEEMyIP
+	err = json.NewDecoder(res.Body).Decode(&myIP)
+	if err != nil {
+		log.Println(err)
+		return "error" + err.Error()
+	}
+
+	return myIP.IPAddress
 }
 
 // get app version from embeded wails.json file
