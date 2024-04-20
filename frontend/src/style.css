@@ -1,14 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Source Code Pro";
+  src: url("./assets/SourceCodePro-VariableFont_wght.ttf");
+}
+
 * {
-  font-family: "Nunito", sans-serif;
-  font-optical-sizing: auto;
-  /* font-weight: 700; */
-  font-style: normal;
+  font-family: "Source Code Pro", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* width */
