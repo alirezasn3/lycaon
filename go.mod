@@ -5,7 +5,7 @@ go 1.21.1
 toolchain go1.21.6
 
 require (
-	github.com/wailsapp/wails/v2 v2.8.0
+	github.com/wailsapp/wails/v2 v2.8.1
 	golang.org/x/net v0.20.0
 )
 
